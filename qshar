@@ -7,14 +7,16 @@
 # ./qshar <nazwa archiwum> <lista plikow>...                            #
 #                                                                       #
 # Uzywane w skrypcie programy:                                          #
-#   if, while, for                                                      #
-#   ls                                                                  #
-#   awk                                                                 #
-#   stat                                                                #
-#   printf                                                              #
-#   md5sum                                                              #
-#   od / xxd                                                            #
+#     if, while, for                                                    #
+#     ls                                                                #
+#     awk                                                               #
+#     eval (uruchamianie komendy ze zmiennej)                           #
+#     stat (atrybuty i rozmiar pliku)                                   #
+#     printf                                                            #
+#     md5sum (suma kontrolna dla kazdego pliku)                         #
+#     od / xxd / hexdump (zrzut bajtow na system szesnastkowy)          #
 #                                                                       #
+# Wersja: 1.4                                                           #
 # Autor: quetzelcoatlus, AD 2018                                        #
 #########################################################################
 
@@ -30,21 +32,26 @@ dir="$1"
 shift
 
 # ustawienie programu do zrzutu plikow w postac szesnastkowa. Domyslnie najpierw od, potem xxd.
-if (od --output-duplicates --width=1 --format=x1 <<< "a" > /dev/null 2>/dev/null)
+if (od --address-radix=n --output-duplicates --width=1 --format=x1 <<< "a" > /dev/null 2>/dev/null)
 then
-	hexdump="od -An -vtx1 -w1"
+    hexdump="od -An -v -tx1 -w1"
 else
-	if (xxd -c 1 <<< "a" > /dev/null 2>/dev/null)
+    if (xxd -postscript -c 1 <<< "a" > /dev/null 2>/dev/null)
     then
         hexdump="xxd -p -c 1"
     else
-        printf "Brak zadnego z programow: od lub xxd. Konczenie pracy skryptu\n"
-        exit
+        if (hexdump --no-squeezing --format '1/1 "%02x\n"' <<< "a" > /dev/null 2>/dev/null)
+        then        
+            hexdump="hexdump -v -e '1/1 \"%02x\n\"'"
+        else
+            printf "Brak jakiegokolwiek programu do konwersji bajtow na system szesnastkowy: 'od' lub 'xxd' lub 'hexdump'. Konczenie pracy skryptu.\n"
+            exit
+        fi
     fi
 fi
 
 
-# wypisanie $1 spacji, a potem #\n
+# wypisanie $1 spacji, a potem #\n. Potrzebne do generowania naglowka pliku wynikowego.
 hash_after_spaces () {
     i=1
     while [ $i -le $1 ]
@@ -196,8 +203,8 @@ archive () {
         if [ -f $1 ]
         then
             >&2 printf "Archiwizacja pliku $1...\n"
-            printf "\n# ---------------------- $1 ----------------------\n\n" >> $2
-
+            printf "\n############################################# $1 #############################################\n\n" >> $2
+            
             printf "# Wyluskanie 'sciezki katalogu pliku' z 'sciezki pliku'.\n" >> $2 
             printf "getdir=\"${1%/*}\"\n" >> $2
             printf 'if [ "$getdir" == "'"$1"'" ]\n' >> $2
@@ -225,19 +232,19 @@ archive () {
             
             printf "# Jedna dluga linijka wkladajaca do wyjsciowego pliku bajty oryginalnego pliku zapisane szesnastkowo.\n" >> $2
             printf '$write "' >> $2
-            $hexdump $1 | awk '{printf "\\x%s", $1}' >> $2
+            eval $hexdump $1 | awk '{printf "\\x%s", $1}' >> $2
             printf '" > $dir/'"$1\n\n" >> $2
-
+            
             printf '# Sprawdzenie, czy plik sie utworzyl.\n' >> $2
             printf 'if [ ! -f "$dir/'"$1\" ]\n" >> $2
             printf "then\n" >> $2
             printf '\t$write "(!)ERROR(!). Nastepuje kontynuacja.\\n"\n' >> $2
             printf 'else\n' >> $2
             printf '\t$write "OK, MD5 CHECK -> "\n' >> $2
-
+            
             printf '\t# Przyznanie plikowi wlasciwych atrybutow\n' >> $2
             printf "\tchmod $(stat -c %a $1) "'"$dir/'"$1\"\n" >> $2
-
+            
             printf '\t# Sprawdzenie zgodnosci sumy kontrolnej (jezeli jest) zawartosci utworzonego pliku z oryginalna.\n' >> $2
             printf '\tif [ ! -z "$md5" ]\n' >> $2
             printf '\tthen\n' >> $2
