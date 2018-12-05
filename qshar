@@ -13,10 +13,12 @@
 #   stat                                                                #
 #   printf                                                              #
 #   md5sum                                                              #
-#   xxd                                                                 #
+#   od / xxd                                                            #
 #                                                                       #
 # Autor: quetzelcoatlus, AD 2018                                        #
 #########################################################################
+
+
 
 # skrypt wypakowujacy bedzie mial nazwe z $1 + ".sh"
 file="$1.sh"
@@ -26,6 +28,21 @@ dir="$1"
 
 # przesuwamy argumenty
 shift
+
+# ustawienie programu do zrzutu plikow w postac szesnastkowa. Domyslnie najpierw od, potem xxd.
+if (od --output-duplicates --width=1 --format=x1 <<< "a" > /dev/null 2>/dev/null)
+then
+	hexdump="od -An -vtx1 -w1"
+else
+	if (xxd -c 1 <<< "a" > /dev/null 2>/dev/null)
+    then
+        hexdump="xxd -p -c 1"
+    else
+        printf "Brak zadnego z programow: od lub xxd. Konczenie pracy skryptu\n"
+        exit
+    fi
+fi
+
 
 # wypisanie $1 spacji, a potem #\n
 hash_after_spaces () {
@@ -208,7 +225,7 @@ archive () {
             
             printf "# Jedna dluga linijka wkladajaca do wyjsciowego pliku bajty oryginalnego pliku zapisane szesnastkowo.\n" >> $2
             printf '$write "' >> $2
-            xxd -c 1 $1 | awk '{printf "\\x%s", $2}' >> $2
+            $hexdump $1 | awk '{printf "\\x%s", $1}' >> $2
             printf '" > $dir/'"$1\n\n" >> $2
 
             printf '# Sprawdzenie, czy plik sie utworzyl.\n' >> $2
