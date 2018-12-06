@@ -16,11 +16,17 @@
 #     md5sum (suma kontrolna dla kazdego pliku)                         #
 #     od / xxd / hexdump (zrzut bajtow na system szesnastkowy)          #
 #                                                                       #
-# Wersja: 1.4                                                           #
+# Wersja: 1.5                                                           #
 # Autor: quetzelcoatlus, AD 2018                                        #
 #########################################################################
 
 
+# skrypt przyjmuje co najmniej 2 parametry
+if [ ${#@} -lt 2 ]
+then
+    printf "Skrypt musi otrzymac co najmniej dwa parametry: nazwe archiwum oraz nazwe pliku. Konczenie pracy.\n"
+    exit
+fi
 
 # skrypt wypakowujacy bedzie mial nazwe z $1 + ".sh"
 file="$1.sh"
