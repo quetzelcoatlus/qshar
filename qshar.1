@@ -1,0 +1,90 @@
+.TH qshar 1 "06 Grudnia, AD 2018" "Wersja 1.4" "qshar"
+
+.SH NAZWA
+qshar \- Skrypt archiwizujący pliki, który generuje wykonywalny skrypt wypakowujący.
+
+.SH SKŁADNIA
+.B qshar
+.I NAZWA_ARCHIWUM LISTA_PLIKOW
+
+.SH OPIS
+.B qshar 
+jest własną implementacją programu do archiwizacji plikow w skrypt powłoki systemowej, inspirowany programem
+.B shar
+z
+.B sharutils.
+.PP
+Wynikiem archiwizacji jest skrypt wykonywalny, który może zostać uruchomiony przez
+.I /bin/sh
+celem wypakowania.
+.PP
+Skrypt obsługuje archiwizację plików i katalogów. Dla każdego pliku zamienia on wszystkie jego bajty
+na szesnastkowy format obsługiwany przez
+.B printf
+oraz zapisuje jego atrybuty i sumę kontrolną wylicznoną przez
+.B md5sum
+(która może zostać pominięta, jeżeli wypakowujący nie posiada tego programu).
+.PP
+.B qshar
+wymaga posiadania co najmniej jednego z następujących programów:
+.B od
+lub
+.B xxd
+lub 
+.B hexdump
+celem zakodowania plików wejściowych.
+.PP
+Ideą programu jest, żeby wynikowy skrypt był jak najprostszy i jak najmniej zależny od zewnętrznych programów. Na chwilę obecną wymaga: 
+.I if
+i
+.I while
+(sh / bash), 
+.B mkdir
+,
+.B chmod
+,
+.B printf
+/
+.B echo
+oraz (opcjonalnie)
+.B md5sum
+
+.SH ARGUMENTY
+Obecnie
+.B qshar
+nie przyjmuje żadnych argumentów, ale z czasem może to ulec zmianie.
+
+.SH PRZYKŁADY
+1. Spakowanie jednego pliku 
+.I main.c
+do archiwum o nazwie
+.I archiwum
+.PP
+.RS
+.B qshar
+archiwum main.c
+.RE
+.PP
+2. Spakowanie katalogu
+.I dir
+do archiwum
+.I ar
+.PP
+.RS
+.B qshar
+ar dir
+.RE
+.PP
+3. Spakowanie wszystkich plikow (i katalogow) w obecnym katalogu do
+.I archiwum
+.PP
+.RS
+.B qshar
+archiwum *
+.RE
+
+.SH ZOBACZ TAKŻE
+.B shar(1)
+
+.SH AUTOR
+quetzelcoatlus (https://github.com/quetzelcoatlus)
