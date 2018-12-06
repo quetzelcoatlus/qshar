@@ -273,5 +273,5 @@ do
     archive $var $file
 done
 
-printf '\n$write "\\nWypakowywanie zakonczone. :)\\n"' >> $file
+printf '\n$write "\\nWypakowywanie zakonczone. :)\\n"\n' >> $file
 >&2 printf "\nArchiwum samowypakowujace $file zostalo wygenerowane. :)\n"

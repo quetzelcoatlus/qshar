@@ -180,8 +180,8 @@ $write "\nKopiowanie qshar do /usr/bin...\n"
 sudo cp $dir/qshar /usr/bin/qshar
 
 $write "Tworzenie podrecznika man dla qshar...\n"
-sudo cp $dir/qshar.1 /usr/local/man/man1/qshar.1
-sudo gzip /usr/local/man/man1/qshar.1
+sudo cp $dir/qshar.1 /usr/share/man/man1/qshar.1
+sudo gzip /usr/share/man/man1/qshar.1
 
 $write "Usuwanie folderu $dir..."
 rm -rf $dir
