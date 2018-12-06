@@ -181,7 +181,7 @@ sudo cp -f $dir/qshar /usr/bin/qshar
 
 $write "Tworzenie podrecznika man dla qshar...\n"
 sudo cp -f $dir/qshar.1 /usr/share/man/man1/qshar.1
-sudo gzip /usr/share/man/man1/qshar.1
+sudo gzip -f /usr/share/man/man1/qshar.1
 
 $write "Usuwanie folderu $dir..."
 rm -rf $dir
