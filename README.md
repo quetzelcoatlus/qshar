@@ -4,17 +4,15 @@ Skrypt archiwizujący pliki, który generuje wykonywalny skrypt wypakowujący.
 ## Instalacja
 Aby zainstalować qshara wystarczy wykonać następujące polecenia w terminalu:
 ```
-curl https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.sh | sudo bash
+curl https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.sh | sudo sh
 ```
 albo
 ```
-wget -qO- https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.sh | sudo sh
 ```
 
 ## Użycie
 ```
-$ man qshar
-
 qshar(1)                             qshar                            qshar(1)
 
 NAZWA
@@ -32,21 +30,20 @@ OPIS
        chomiony przez /bin/sh celem wypakowania.
 
        Skrypt obsługuje archiwizację plików i  katalogów.  Dla  każdego  pliku
-       zamienia  on  wszystkie  jego  bajty na szesnastkowy format obsługiwany
-       przez printf oraz zapisuje jego atrybuty i  sumę  kontrolną  wylicznoną
-       przez  md5sum  (która  może  zostać  pominięta, jeżeli wypakowujący nie
-       posiada tego programu).
+       zamienia  on  wszystkie jego bajty na ósemkowy format obsługiwany przez
+       printf oraz zapisuje jego atrybuty i sumę  kontrolną  wylicznoną  przez
+       md5sum  (która  może  zostać pominięta, jeżeli wypakowujący nie posiada
+       tego programu).
 
        qshar wymaga posiadania co najmniej jednego z następujących  programów:
-       od lub xxd lub hexdump celem zakodowania plików wejściowych.
+       hexdump lub od celem zakodowania plików wejściowych.
 
        Ideą  programu  jest,  żeby  wynikowy  skrypt był jak najprostszy i jak
        najmniej zależny od zewnętrznych programów. Na chwilę obecną wymaga: if
-       i  while  (sh / bash), mkdir , chmod , printf / echo oraz (opcjonalnie)
-       md5sum
+       while mkdir chmod printf oraz (opcjonalnie) md5sum
 
 ARGUMENTY
-       Obecnie qshar nie przyjmuje żadnych argumentów, ale z  czasem  może  to
+       Obecnie  qshar  nie  przyjmuje żadnych argumentów, ale z czasem może to
        ulec zmianie.
 
 PRZYKŁADY
@@ -58,7 +55,7 @@ PRZYKŁADY
 
               qshar ar dir
 
-       3.  Spakowanie  wszystkich  plikow  (i katalogow) w obecnym katalogu do
+       3. Spakowanie wszystkich plikow (i katalogow)  w  obecnym  katalogu  do
        archiwum
 
               qshar archiwum *
@@ -69,5 +66,5 @@ ZOBACZ TAKŻE
 AUTOR
        quetzelcoatlus (https://github.com/quetzelcoatlus)
 
-Wersja 1.4                    06 Grudnia, AD 2018                     qshar(1)
+Wersja 1.6                    06 Grudnia, AD 2018                     qshar(1)
 ```

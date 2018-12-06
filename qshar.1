@@ -1,4 +1,4 @@
-.TH qshar 1 "06 Grudnia, AD 2018" "Wersja 1.5" "qshar"
+.TH qshar 1 "06 Grudnia, AD 2018" "Wersja 1.6" "qshar"
 
 .SH NAZWA
 qshar \- Skrypt archiwizujący pliki, który generuje wykonywalny skrypt wypakowujący.
@@ -19,7 +19,7 @@ Wynikiem archiwizacji jest skrypt wykonywalny, który może zostać uruchomiony 
 celem wypakowania.
 .PP
 Skrypt obsługuje archiwizację plików i katalogów. Dla każdego pliku zamienia on wszystkie jego bajty
-na szesnastkowy format obsługiwany przez
+na ósemkowy format obsługiwany przez
 .B printf
 oraz zapisuje jego atrybuty i sumę kontrolną wylicznoną przez
 .B md5sum
@@ -27,25 +27,17 @@ oraz zapisuje jego atrybuty i sumę kontrolną wylicznoną przez
 .PP
 .B qshar
 wymaga posiadania co najmniej jednego z następujących programów:
-.B od
-lub
-.B xxd
-lub 
 .B hexdump
+lub
+.B od
 celem zakodowania plików wejściowych.
 .PP
 Ideą programu jest, żeby wynikowy skrypt był jak najprostszy i jak najmniej zależny od zewnętrznych programów. Na chwilę obecną wymaga: 
 .I if
-i
 .I while
-(sh / bash), 
 .B mkdir
-,
 .B chmod
-,
 .B printf
-/
-.B echo
 oraz (opcjonalnie)
 .B md5sum
 

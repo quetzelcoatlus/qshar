@@ -4,19 +4,20 @@
 # Program do archiwizacji plikow, generujacy skrypt wypakowujacy.       #
 #                                                                       #
 # Sposob uzycia:                                                        #
-# ./qshar <nazwa archiwum> <lista plikow>...                            #
+#     qshar <nazwa archiwum> <lista plikow/folderow>                    #
 #                                                                       #
 # Uzywane w skrypcie programy:                                          #
 #     if, while, for                                                    #
+#     printf, shift                                                     #
 #     ls                                                                #
 #     awk                                                               #
+#     cut                                                               #
 #     eval (uruchamianie komendy ze zmiennej)                           #
 #     stat (atrybuty i rozmiar pliku)                                   #
-#     printf                                                            #
 #     md5sum (suma kontrolna dla kazdego pliku)                         #
-#     od / xxd / hexdump (zrzut bajtow na system szesnastkowy)          #
+#     hexdump / od (zrzut bajtow na system osemkowy)                    #
 #                                                                       #
-# Wersja: 1.5                                                           #
+# Wersja: 1.6                                                           #
 # Autor: quetzelcoatlus, AD 2018                                        #
 #########################################################################
 
@@ -25,7 +26,7 @@
 if [ ${#@} -lt 2 ]
 then
     printf "Skrypt musi otrzymac co najmniej dwa parametry: nazwe archiwum oraz nazwe pliku. Konczenie pracy.\n"
-    exit
+    exit 1
 fi
 
 # skrypt wypakowujacy bedzie mial nazwe z $1 + ".sh"
@@ -37,25 +38,29 @@ dir="$1"
 # przesuwamy argumenty
 shift
 
-# ustawienie programu do zrzutu plikow w postac szesnastkowa. Domyslnie najpierw od, potem xxd.
-if (od --address-radix=n --output-duplicates --width=1 --format=x1 <<< "a" > /dev/null 2>/dev/null)
+# ustawienie programu do zrzutu plikow w postac osemkowa. Domyslnie najpierw od, potem hexdump.
+if (printf "a" | hexdump --no-squeezing --format '1/1 "%o\n"'> /dev/null 2>/dev/null)
 then
-    hexdump="od -An -v -tx1 -w1"
+    octdump="hexdump -v -e '1/1 \"%o\n\"'"
+elif (printf "a" | od --address-radix=n --output-duplicates --format=o1 --width=1 > /dev/null 2>/dev/null)
+then    
+    octdump="od -An -v -to1 -w1"
 else
-    if (xxd -postscript -c 1 <<< "a" > /dev/null 2>/dev/null)
-    then
-        hexdump="xxd -p -c 1"
-    else
-        if (hexdump --no-squeezing --format '1/1 "%02x\n"' <<< "a" > /dev/null 2>/dev/null)
-        then        
-            hexdump="hexdump -v -e '1/1 \"%02x\n\"'"
-        else
-            printf "Brak jakiegokolwiek programu do konwersji bajtow na system szesnastkowy: 'od' lub 'xxd' lub 'hexdump'. Konczenie pracy skryptu.\n"
-            exit
-        fi
-    fi
+    printf "Brak jakiegokolwiek programu do konwersji bajtow na system osemkowy: 'hexdump' lub 'od'. Konczenie pracy skryptu.\n"
+    exit 2
 fi
 
+
+# wypisanie $1 haszy, a potem enter. Do rysowania boxa. :3
+n_hashes () {
+    i=1
+    while [ $i -le $1 ]
+    do
+        printf "#" >> $2
+        i=$((i+1))
+    done
+    printf "\n" >> $2
+}
 
 # wypisanie $1 spacji, a potem #\n. Potrzebne do generowania naglowka pliku wynikowego.
 hash_after_spaces () {
@@ -76,26 +81,25 @@ get_stats () {
         do
             get_stats "$1/$f" $2
         done
-    else 
-        if [ -f $1 ]
+    elif [ -f $1 ] 
+    then
+        name=$1
+        # jesli nazwa pliku jest za duza dla ramki, to obcinamy :)
+        if [ ${#name} -ge 39 ]
         then
-            name=$1
-            if [ ${#name} -ge 39 ]
-            then
-                name=${name:0:35}
-                name="$name""... "
-            fi
-            printf "# %10d B | $(stat -c %A $1) | $name" $(stat -c %s $1) >> $2
-            hash_after_spaces $((39-${#1})) $2
+            name=$(printf $name | cut -c -35)
+            name="$name""..."
         fi
+        printf "# %10d B | $(stat -c %A $1) | $name" $(stat -c %s $1) >> $2
+        hash_after_spaces $((39-${#name})) $2
     fi
 }
 
 printf "#!/bin/sh\n\n" > $file
 
-for i in {1..70}; do printf "#" >> $file; done
+n_hashes 70 $file
 
-printf "\n# Jest to skrypt wypakowujacy nastepujace pliki:" >> $file
+printf "# Jest to skrypt wypakowujacy nastepujace pliki:" >> $file
 hash_after_spaces 21 $file
 
 printf "#" >> $file
@@ -127,8 +131,8 @@ hash_after_spaces 68 $file
 printf "# Uzywane w skrypcie programy:" >> $file
 hash_after_spaces 39 $file
 
-printf "#     printf / echo (jedno z dwoch, domyslnie printf)" >> $file
-hash_after_spaces 16 $file
+printf "#     printf" >> $file
+hash_after_spaces 57 $file
 
 printf '#     if [ ... ] ; then ... ; (else ... ; ) fi' >> $file
 hash_after_spaces 23 $file
@@ -148,25 +152,20 @@ hash_after_spaces 46 $file
 printf "#" >> $file
 hash_after_spaces 68 $file
 
+printf "# Wersja programu archiwizujacego qshar: 1.6" >> $file
+hash_after_spaces 25 $file
+
 printf "# Autor programu archiwizujacego: quetzelcoatlus, AD 2018" >> $file
 hash_after_spaces 12 $file
 
-for i in {1..70}; do printf "#" >> $file; done
+n_hashes 70 $file
 
 
-printf '\n\n# Folder, do ktorego wypakowane zostanie archiwum.\n' >> $file
+printf '\n# Folder, do ktorego wypakowane zostanie archiwum.\n' >> $file
 printf "dir=\"$dir\"\n\n" >> $file
 
-printf '# Wybranie metody wypisywania - pierwszenstwo ma printf, potem echo.\n' >> $file
-printf 'if (printf "\\x50\\n" > /dev/null 2>/dev/null)\n' >> $file
-printf 'then\n' >> $file
-printf '\twrite="printf"\n' >> $file
-printf 'else\n' >> $file
-printf '\twrite="echo -n -e"\n' >> $file
-printf 'fi\n\n' >> $file
-
 printf '# Test na obecnosc programu md5sum uzywanego do zweryfikowania poprawnosci pliku (opcjonalne).\n' >> $file
-printf 'if (md5sum -b <<< "a" > /dev/null 2>/dev/null)\n' >> $file
+printf 'if (printf "a" | md5sum -b > /dev/null 2>/dev/null)\n' >> $file
 printf 'then\n' >> $file
 printf '\tmd5="md5sum -b"\n' >> $file
 printf 'else\n' >> $file
@@ -178,22 +177,23 @@ printf '# Sprawdzenie, czy istnieje juz katalog o takiej nazwie. Jesli tak, to d
 printf 'if [ -d "$dir" ]\n' >> $file
 printf 'then\n' >> $file
 printf '\ti=1\n' >> $file
-printf '\twhile [ -d "$dir-$i" ] ; do\n' >> $file
+printf '\twhile [ -d "$dir-$i" ]\n' >> $file
+printf '\tdo\n' >> $file
 printf '\t\ti=$((i+1))\n' >> $file
 printf '\tdone\n' >> $file
 printf '\tdir="$dir-$i"\n' >> $file
 printf 'fi\n\n' >> $file
 
 printf '# Tworzenie katalogu, a nastepnie sprawdzenie, czy sie dobrze utworzyl.\n' >> $file
-printf '$write "Tworzenie katalogu $dir -> "\n' >> $file
+printf 'printf "Tworzenie katalogu $dir -> "\n' >> $file
 printf 'mkdir "$dir"\n\n' >> $file
 
 printf 'if [ -d "$dir" ]\n' >> $file
 printf 'then\n' >> $file
-printf '\t$write "OK\\n"\n' >> $file
+printf '\tprintf "OK\\n"\n' >> $file
 printf 'else\n' >> $file
-printf '\t$write "(!)ERROR(!)\\n"\n' >> $file
-printf '\texit\n' >> $file
+printf '\tprintf "(!)ERROR(!)\\n"\n' >> $file
+printf '\texit 1\n' >> $file
 printf 'fi\n' >> $file
 
 
@@ -205,71 +205,66 @@ archive () {
         do
             archive "$1/$f" $2
         done
+    elif [ -f $1 ]  
+    then
+        >&2 printf "Archiwizacja pliku $1...\n"
+        printf "\n############################################# $1 #############################################\n\n" >> $2
+
+        printf "# Wyluskanie 'sciezki katalogu pliku' z 'sciezki pliku'.\n" >> $2 
+        printf "getdir=\"${1%/*}\"\n" >> $2
+        printf 'if [ "$getdir" = "'"$1"'" ]\n' >> $2
+        printf 'then\n' >> $2
+        printf '\tgetdir="."\n' >> $2
+        printf 'fi\n\n' >> $2
+
+        printf "# Katalog nowego pliku = 'katalog do ktorego wypakowujemy plik'+'/'+'stary katalog pliku'.\n" >> $2
+        printf 'filedir="$dir/$getdir"\n\n' >> $2
+
+        printf "# Jezeli go nie ma, to nalezy go utworzyc.\n" >> $2
+        printf 'if [ ! -d "$filedir" ]\n' >> $2 
+        printf 'then\n' >> $2
+        printf '\tprintf "\\nTworzenie katalogu $filedir -> "\n' >> $2
+        printf '\tmkdir -p "$filedir"\n' >> $2
+        printf '\tif [ -d "$filedir" ]\n' >> $2
+        printf '\tthen\n' >> $2
+        printf '\t\tprintf "OK\\n"\n' >> $2
+        printf '\telse\n' >> $2
+        printf '\t\tprintf "(!)ERROR(!)\\n"\n' >> $2
+        printf '\tfi\n' >> $2
+        printf 'fi\n\n' >> $2
+
+        printf 'printf "Wypakowywanie pliku $dir/'"$1 -> \"\n\n" >> $2
+
+        printf "# Jedna dluga linijka wkladajaca do wyjsciowego pliku bajty oryginalnego pliku zapisane szesnastkowo.\n" >> $2
+        printf 'printf "' >> $2
+        eval $octdump $1 | awk '{printf "\\%s", $1}' >> $2
+        printf '" > $dir/'"$1\n\n" >> $2
+
+        printf '# Sprawdzenie, czy plik sie utworzyl.\n' >> $2
+        printf 'if [ ! -f "$dir/'"$1\" ]\n" >> $2
+        printf "then\n" >> $2
+        printf '\tprintf "(!)ERROR(!). Nastepuje kontynuacja.\\n"\n' >> $2
+        printf 'else\n' >> $2
+        printf '\tprintf "OK, MD5 CHECK -> "\n' >> $2
+
+        printf '\t# Przyznanie plikowi wlasciwych atrybutow\n' >> $2
+        printf "\tchmod $(stat -c %a $1) "'"$dir/'"$1\"\n" >> $2
+
+        printf '\t# Sprawdzenie zgodnosci sumy kontrolnej (jezeli jest) zawartosci utworzonego pliku z oryginalna.\n' >> $2
+        printf '\tif [ ! -z "$md5" ]\n' >> $2
+        printf '\tthen\n' >> $2
+        printf '\t\tif [ "$($md5 $dir/'"$1"" | awk '{ printf "'$1'" }'"')" = "'"$(md5sum -b $1 | awk '{printf $1}')\" ]\n" >> $2
+        printf '\t\tthen\n' >> $2 
+        printf '\t\t\tprintf "OK\\n"\n' >> $2 
+        printf '\t\telse\n' >> $2 
+        printf '\t\t\tprintf "(!)WRONG(!)\\n"\n' >> $2 
+        printf '\t\tfi\n' >> $2 
+        printf '\telse\n' >> $2
+        printf '\t\tprintf "(?)MISSING(?)\\n"\n' >> $2
+        printf '\tfi\n' >> $2
+        printf 'fi\n' >> $2 
     else
-        if [ -f $1 ]
-        then
-            >&2 printf "Archiwizacja pliku $1...\n"
-            printf "\n############################################# $1 #############################################\n\n" >> $2
-            
-            printf "# Wyluskanie 'sciezki katalogu pliku' z 'sciezki pliku'.\n" >> $2 
-            printf "getdir=\"${1%/*}\"\n" >> $2
-            printf 'if [ "$getdir" == "'"$1"'" ]\n' >> $2
-            printf 'then\n' >> $2
-            printf 'getdir="."\n' >> $2
-            printf 'fi\n\n' >> $2
-            
-            printf "# Katalog nowego pliku = 'katalog do ktorego wypakowujemy plik'+'/'+'stary katalog pliku'.\n" >> $2
-            printf 'filedir="$dir/$getdir"\n\n' >> $2
-            
-            printf "# Jezeli go nie ma, to nalezy go utworzyc.\n" >> $2
-            printf 'if [ ! -d "$filedir" ]\n' >> $2 
-            printf 'then\n' >> $2
-            printf '\t$write "\\nTworzenie katalogu $filedir -> "\n' >> $2
-            printf '\tmkdir -p "$filedir"\n' >> $2
-            printf '\tif [ -d "$filedir" ]\n' >> $2
-            printf '\tthen\n' >> $2
-            printf '\t\t$write "OK\\n"\n' >> $2
-            printf '\telse\n' >> $2
-            printf '\t\t$write "(!)ERROR(!)\\n"\n' >> $2
-            printf '\tfi\n' >> $2
-            printf 'fi\n\n' >> $2
-            
-            printf '$write "Wypakowywanie pliku $dir/'"$1 -> \"\n\n" >> $2
-            
-            printf "# Jedna dluga linijka wkladajaca do wyjsciowego pliku bajty oryginalnego pliku zapisane szesnastkowo.\n" >> $2
-            printf '$write "' >> $2
-            eval $hexdump $1 | awk '{printf "\\x%s", $1}' >> $2
-            printf '" > $dir/'"$1\n\n" >> $2
-            
-            printf '# Sprawdzenie, czy plik sie utworzyl.\n' >> $2
-            printf 'if [ ! -f "$dir/'"$1\" ]\n" >> $2
-            printf "then\n" >> $2
-            printf '\t$write "(!)ERROR(!). Nastepuje kontynuacja.\\n"\n' >> $2
-            printf 'else\n' >> $2
-            printf '\t$write "OK, MD5 CHECK -> "\n' >> $2
-            
-            printf '\t# Przyznanie plikowi wlasciwych atrybutow\n' >> $2
-            printf "\tchmod $(stat -c %a $1) "'"$dir/'"$1\"\n" >> $2
-            
-            printf '\t# Sprawdzenie zgodnosci sumy kontrolnej (jezeli jest) zawartosci utworzonego pliku z oryginalna.\n' >> $2
-            printf '\tif [ ! -z "$md5" ]\n' >> $2
-            printf '\tthen\n' >> $2
-            printf '\t\tval=$($md5 $dir/'"$1"')\n' >> $2
-            printf '\t\t# Obciecie stringa do 32 znakow.\n' >> $2
-            printf '\t\thash=${val:0:32}\n' >> $2
-            printf '\t\tif [ "$hash" == "'"$(md5sum -b $1 | awk '{printf $1}')\" ]\n" >> $2
-            printf '\t\tthen\n' >> $2 
-            printf '\t\t\t$write "OK\\n"\n' >> $2 
-            printf '\t\telse\n' >> $2 
-            printf '\t\t\t$write "(!)WRONG(!)\\n"\n' >> $2 
-            printf '\t\tfi\n' >> $2 
-            printf '\telse\n' >> $2
-            printf '\t\t$write "(?)MISSING(?)\\n"\n' >> $2
-            printf '\tfi\n' >> $2
-            printf 'fi\n' >> $2 
-        else
-            >&2 printf "Plik $1 nie istnieje. Nastepuje kontynuacja...\n"
-        fi
+        >&2 printf "Plik $1 nie istnieje. Nastepuje kontynuacja...\n"
     fi
 }
 
@@ -279,5 +274,9 @@ do
     archive $var $file
 done
 
-printf '\n$write "\\nWypakowywanie zakonczone. :)\\n"\n' >> $file
+printf '\nprintf "\\nWypakowywanie zakonczone. :)\\n"\n\n' >> $file
+printf 'exit 0\n' >> $file
+
 >&2 printf "\nArchiwum samowypakowujace $file zostalo wygenerowane. :)\n"
+
+exit 0
