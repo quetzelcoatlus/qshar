@@ -4,7 +4,7 @@ Skrypt archiwizujący pliki, który generuje wykonywalny skrypt wypakowujący.
 ## Instalacja
 Aby zainstalować qshara wystarczy wykonać następujące polecenia w terminalu:
 ```
-curl https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.sh | sudo sh
+curl -s https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.sh | sudo sh
 ```
 albo
 ```
