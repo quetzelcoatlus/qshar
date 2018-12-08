@@ -122,8 +122,8 @@ hash_after_spaces 40 $file
 printf '#     $ sh/bash <skrypt>' >> $file
 hash_after_spaces 45 $file
 
-printf '#     $ chmod +x <skrypt> ; ./<skrypt' >> $file
-hash_after_spaces 32 $file
+printf '#     $ chmod +x <skrypt> ; ./<skrypt>' >> $file
+hash_after_spaces 31 $file
 
 printf "#" >> $file
 hash_after_spaces 68 $file
@@ -235,7 +235,7 @@ archive () {
 
         printf 'printf "Wypakowywanie pliku $dir/'"$1 -> \"\n\n" >> $2
 
-        printf "# Jedna dluga linijka wkladajaca do wyjsciowego pliku bajty oryginalnego pliku zapisane szesnastkowo.\n" >> $2
+        printf "# Jedna dluga linijka wkladajaca do wyjsciowego pliku bajty oryginalnego pliku zapisane osemkowo.\n" >> $2
         printf 'printf "' >> $2
         eval $octdump $1 | awk '{printf "\\%s", $1}' >> $2
         printf '" > $dir/'"$1\n\n" >> $2

@@ -12,6 +12,7 @@ wget -qO- https://raw.githubusercontent.com/quetzelcoatlus/qshar/master/install.
 ```
 
 ## Użycie
+$ man qshar
 ```
 qshar(1)                             qshar                            qshar(1)
 
