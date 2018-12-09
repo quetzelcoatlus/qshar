@@ -210,15 +210,14 @@ archive () {
         >&2 printf "Archiwizacja pliku $1...\n"
         printf "\n############################################# $1 #############################################\n\n" >> $2
 
-        printf "# Wyluskanie 'sciezki katalogu pliku' z 'sciezki pliku'.\n" >> $2 
-        printf "getdir=\"${1%/*}\"\n" >> $2
-        printf 'if [ "$getdir" = "'"$1"'" ]\n' >> $2
-        printf 'then\n' >> $2
-        printf '\tgetdir="."\n' >> $2
-        printf 'fi\n\n' >> $2
+        getdir=${1%/*}
+        if [ "$getdir" = "$1" ]
+        then
+            getdir="."
+        fi
 
         printf "# Katalog nowego pliku = 'katalog do ktorego wypakowujemy plik'+'/'+'stary katalog pliku'.\n" >> $2
-        printf 'filedir="$dir/$getdir"\n\n' >> $2
+        printf 'filedir="$dir/'"$getdir"'"\n\n' >> $2
 
         printf "# Jezeli go nie ma, to nalezy go utworzyc.\n" >> $2
         printf 'if [ ! -d "$filedir" ]\n' >> $2 
